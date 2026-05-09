@@ -1,0 +1,81 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.project
+.settings/
+.vscode/
+bin/
+build/
+doc/api/
+.dart_tool/
+
+# Flutter/Dart/Pub
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/lib/generated_plugin_registrant.dart
+
+# FVM
+.fvm/flutter_sdk
+.fvm/
+
+# Android
+.gradle/
+/android/local.properties
+/android/app/src/main/java/io/flutter/plugins/
+/android/app/src/main/kotlin/io/flutter/plugins/
+*.apk
+*.ap_
+*.dex
+*.keystore
+/android/app/google-services.json
+
+# iOS
+*.mode1v3
+*.mode2v3
+*.normal
+*.perspectivev3
+*.pbxuser
+*.app
+*.ipa
+*.obj
+*.xcworkspace
+!/ios/Runner.xcworkspace
+/ios/Flutter/Generated.xcconfig
+/ios/Flutter/flutter_export_environment.sh
+/ios/Flutter/App.framework
+/ios/Flutter/App.podspec
+/ios/Flutter/App.framework.dSYM
+/ios/Runner/GeneratedPluginRegistrant.h
+/ios/Runner/GeneratedPluginRegistrant.m
+/ios/Podfile.lock
+/ios/.bundle/
+/ios/Pods/
+/ios/ServiceDefinitions.json
+
+# macOS
+/macos/Flutter/ephemeral/
+/macos/Flutter/GeneratedPluginRegistrant.swift
+/macos/Pods/
+
+# Web
+/web/index.html.bak
+
+# IDEs
+.idea/
+*.iml
+*.iws
+.metadata
+
+# Generated code
+*.g.dart
+*.freezed.dart
+*.config.dart
