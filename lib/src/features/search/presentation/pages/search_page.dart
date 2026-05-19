@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../bloc/search_bloc.dart';
 
 class SearchPage extends StatefulWidget {
@@ -50,7 +51,7 @@ class _SearchPageState extends State<SearchPage> {
                       title: Text(bit.title),
                       subtitle: Text(bit.tags.join(', ')),
                       onTap: () {
-                        // Implement navigation to detail/edit
+                        context.go('/editor', extra: bit);
                       },
                     ),
                   );

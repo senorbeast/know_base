@@ -30,6 +30,9 @@ class KnowledgeBitModel {
   @Index()
   late DateTime updatedAt;
 
+  @Index()
+  bool isLastActive = false;
+
   // For composite indexes as requested
   @Index(composite: [CompositeIndex('priority'), CompositeIndex('createdAt')])
   DateTime get datePriorityIndex => createdAt;

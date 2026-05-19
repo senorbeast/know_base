@@ -14,31 +14,127 @@ part 'knowledge_editor_bloc.freezed.dart';
 class KnowledgeEditorBloc extends Bloc<KnowledgeEditorEvent, KnowledgeEditorState> {
   final IKnowledgeRepository _repository;
 
-  KnowledgeEditorBloc(this._repository) : super(const KnowledgeEditorState.initial()) {
-    on<_TitleChanged>(_onTitleChanged, transformer: _debounce(const Duration(milliseconds: 800)));
-    on<_BlocksChanged>(_onBlocksChanged, transformer: _debounce(const Duration(milliseconds: 800)));
-    on<_SaveRequested>(_onSaveRequested);
+  KnowledgeEditorBloc(this._repository) : super(KnowledgeEditorState.initial()) {
+    on<_Initialize>(_onInitialize);
+    on<_TitleChanged>(_onTitleChanged);
+    on<_BlockAdded>(_onBlockAdded);
+    on<_BlockUpdated>(_onBlockUpdated);
+    on<_TagsChanged>(_onTagsChanged);
+    on<_PriorityChanged>(_onPriorityChanged);
+    on<_Reset>(_onReset);
+    on<_AutoSave>(
+      _onAutoSave,
+      transformer: (events, mapper) => events.debounceTime(const Duration(milliseconds: 1000)).switchMap(mapper),
+    );
   }
 
-  EventTransformer<T> _debounce<T>(Duration duration) {
-    return (events, mapper) => events.debounceTime(duration).flatMap(mapper);
+  Future<void> _onInitialize(_Initialize event, Emitter<KnowledgeEditorState> emit) async {
+    if (event.existingBit != null) {
+      await _repository.setLastActiveKnowledgeBit(event.existingBit!.id);
+      emit(state.copyWith(
+        bit: event.existingBit!,
+        saveStatus: SaveStatus.initial,
+        isDirty: false,
+      ));
+    } else {
+      final lastActive = await _repository.getLastActiveKnowledgeBit();
+      if (lastActive != null) {
+        emit(state.copyWith(
+          bit: lastActive,
+          saveStatus: SaveStatus.initial,
+          isDirty: false,
+        ));
+      } else {
+        emit(KnowledgeEditorState.initial());
+      }
+    }
   }
 
-  Future<void> _onTitleChanged(_TitleChanged event, Emitter<KnowledgeEditorState> emit) async {
-    // Autosave logic could go here
+  void _onTitleChanged(_TitleChanged event, Emitter<KnowledgeEditorState> emit) {
+    emit(state.copyWith(
+      bit: state.bit.copyWith(
+        title: event.title,
+        updatedAt: DateTime.now(),
+      ),
+      isDirty: true,
+      saveStatus: SaveStatus.initial,
+    ));
+    add(const KnowledgeEditorEvent.autoSave());
   }
 
-  Future<void> _onBlocksChanged(_BlocksChanged event, Emitter<KnowledgeEditorState> emit) async {
-    // Autosave logic could go here
+  void _onBlockAdded(_BlockAdded event, Emitter<KnowledgeEditorState> emit) {
+    emit(state.copyWith(
+      bit: state.bit.copyWith(
+        blocks: [...state.bit.blocks, event.block],
+        updatedAt: DateTime.now(),
+      ),
+      isDirty: true,
+      saveStatus: SaveStatus.initial,
+    ));
+    add(const KnowledgeEditorEvent.autoSave());
   }
 
-  Future<void> _onSaveRequested(_SaveRequested event, Emitter<KnowledgeEditorState> emit) async {
-    emit(const KnowledgeEditorState.saving());
+  void _onBlockUpdated(_BlockUpdated event, Emitter<KnowledgeEditorState> emit) {
+    final updatedBlocks = List<ContentBlock>.from(state.bit.blocks);
+    if (event.index >= 0 && event.index < updatedBlocks.length) {
+      updatedBlocks[event.index] = event.block;
+    }
+    emit(state.copyWith(
+      bit: state.bit.copyWith(
+        blocks: updatedBlocks,
+        updatedAt: DateTime.now(),
+      ),
+      isDirty: true,
+      saveStatus: SaveStatus.initial,
+    ));
+    add(const KnowledgeEditorEvent.autoSave());
+  }
+
+  void _onTagsChanged(_TagsChanged event, Emitter<KnowledgeEditorState> emit) {
+    emit(state.copyWith(
+      bit: state.bit.copyWith(
+        tags: event.tags,
+        updatedAt: DateTime.now(),
+      ),
+      isDirty: true,
+      saveStatus: SaveStatus.initial,
+    ));
+    add(const KnowledgeEditorEvent.autoSave());
+  }
+
+  void _onPriorityChanged(_PriorityChanged event, Emitter<KnowledgeEditorState> emit) {
+    emit(state.copyWith(
+      bit: state.bit.copyWith(
+        priority: event.priority,
+        updatedAt: DateTime.now(),
+      ),
+      isDirty: true,
+      saveStatus: SaveStatus.initial,
+    ));
+    add(const KnowledgeEditorEvent.autoSave());
+  }
+
+  Future<void> _onReset(_Reset event, Emitter<KnowledgeEditorState> emit) async {
+    await _repository.clearLastActiveKnowledgeBit();
+    emit(KnowledgeEditorState.initial());
+  }
+
+  Future<void> _onAutoSave(_AutoSave event, Emitter<KnowledgeEditorState> emit) async {
+    if (!state.isDirty || state.bit.title.trim().isEmpty) return;
+
+    emit(state.copyWith(saveStatus: SaveStatus.saving));
     try {
-      await _repository.createKnowledgeBit(event.bit);
-      emit(const KnowledgeEditorState.success());
+      await _repository.updateKnowledgeBit(state.bit);
+      await _repository.setLastActiveKnowledgeBit(state.bit.id);
+      emit(state.copyWith(
+        saveStatus: SaveStatus.success,
+        isDirty: false,
+      ));
     } catch (e) {
-      emit(KnowledgeEditorState.failure(e.toString()));
+      emit(state.copyWith(
+        saveStatus: SaveStatus.failure,
+        errorMessage: e.toString(),
+      ));
     }
   }
 }

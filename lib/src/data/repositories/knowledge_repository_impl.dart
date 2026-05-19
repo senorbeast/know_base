@@ -24,6 +24,7 @@ class KnowledgeRepositoryImpl implements IKnowledgeRepository {
     final model = KnowledgeBitModelX.fromEntity(bit);
     if (existing != null) {
       model.id = existing.id;
+      model.isLastActive = existing.isLastActive;
     }
     await _isar.writeTxn(() async {
       await _isar.knowledgeBitModels.put(model);
@@ -48,6 +49,7 @@ class KnowledgeRepositoryImpl implements IKnowledgeRepository {
     final models = await _isar.knowledgeBitModels.where().findAll();
     return models.map((m) => m.toEntity()).toList();
   }
+
   @override
   Future<List<KnowledgeBit>> searchKnowledgeBits(String query, {List<String>? tags}) async {
     var queryBuilder = _isar.knowledgeBitModels.filter().titleContains(query, caseSensitive: false);
@@ -60,5 +62,43 @@ class KnowledgeRepositoryImpl implements IKnowledgeRepository {
 
     final models = await queryBuilder.findAll();
     return models.map((m) => m.toEntity()).toList();
+  }
+
+  @override
+  Future<KnowledgeBit?> getLastActiveKnowledgeBit() async {
+    final model = await _isar.knowledgeBitModels.filter().isLastActiveEqualTo(true).findFirst();
+    return model?.toEntity();
+  }
+
+  @override
+  Future<void> setLastActiveKnowledgeBit(String id) async {
+    await _isar.writeTxn(() async {
+      // 1. Find the currently active bit(s) and set them to false
+      final activeModels = await _isar.knowledgeBitModels.filter().isLastActiveEqualTo(true).findAll();
+      for (final model in activeModels) {
+        if (model.remoteId != id) {
+          model.isLastActive = false;
+          await _isar.knowledgeBitModels.put(model);
+        }
+      }
+
+      // 2. Find the target bit and set it to true
+      final targetModel = await _isar.knowledgeBitModels.filter().remoteIdEqualTo(id).findFirst();
+      if (targetModel != null && !targetModel.isLastActive) {
+        targetModel.isLastActive = true;
+        await _isar.knowledgeBitModels.put(targetModel);
+      }
+    });
+  }
+
+  @override
+  Future<void> clearLastActiveKnowledgeBit() async {
+    await _isar.writeTxn(() async {
+      final activeModels = await _isar.knowledgeBitModels.filter().isLastActiveEqualTo(true).findAll();
+      for (final model in activeModels) {
+        model.isLastActive = false;
+        await _isar.knowledgeBitModels.put(model);
+      }
+    });
   }
 }

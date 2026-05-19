@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../bloc/vault_bloc.dart';
 
 class VaultPage extends StatelessWidget {
@@ -36,7 +37,7 @@ class VaultPage extends StatelessWidget {
                       subtitle: Text('${bit.blocks.length} blocks • ${bit.tags.join(", ")}'),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () {
-                        // Implement view/edit bit
+                        context.go('/editor', extra: bit);
                       },
                     ),
                   );

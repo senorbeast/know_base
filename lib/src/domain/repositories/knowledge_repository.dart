@@ -7,4 +7,7 @@ abstract class IKnowledgeRepository {
   Future<KnowledgeBit?> getKnowledgeBit(String id);
   Future<List<KnowledgeBit>> getAllKnowledgeBits();
   Future<List<KnowledgeBit>> searchKnowledgeBits(String query, {List<String>? tags});
+  Future<KnowledgeBit?> getLastActiveKnowledgeBit();
+  Future<void> setLastActiveKnowledgeBit(String id);
+  Future<void> clearLastActiveKnowledgeBit();
 }
